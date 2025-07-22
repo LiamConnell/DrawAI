@@ -13,6 +13,15 @@ Tests the tool's ability to convert photographic portraits into artistic one-lin
 - Maintained perfect single-line continuity
 - Preserved subject recognizability across all styles
 
+### [Rembrandt Self-Portrait](rembrandt_selfportrait/)
+Tests the tool's capability on a classical baroque masterpiece - Rembrandt van Rijn's self-portrait (c. 1659) from Wikimedia Commons.
+
+**Key Results:**
+- Successfully analyzed museum-quality scan (12,243 × 15,859 pixels)
+- Extracted 50 key points focusing on chiaroscuro lighting
+- Preserved artistic dignity and emotional depth across styles
+- Demonstrated cross-temporal artistic analysis capability
+
 ## Running Your Own Experiments
 
 To reproduce these experiments or create new ones:
