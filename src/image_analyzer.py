@@ -58,16 +58,20 @@ class ImageAnalyzer:
     def calculate_saliency(self, image: np.ndarray) -> np.ndarray:
         gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         
-        saliency = cv2.saliency.StaticSaliencySpectralResidual_create()
-        success, saliency_map = saliency.computeSaliency(gray)
+        try:
+            saliency = cv2.saliency.StaticSaliencySpectralResidual_create()
+            success, saliency_map = saliency.computeSaliency(gray)
+            
+            if success:
+                saliency_map = (saliency_map * 255).astype(np.uint8)
+                return saliency_map
+        except AttributeError:
+            pass
         
-        if not success:
-            gradient_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
-            gradient_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
-            saliency_map = np.sqrt(gradient_x**2 + gradient_y**2)
-            saliency_map = (saliency_map * 255 / saliency_map.max()).astype(np.uint8)
-        else:
-            saliency_map = (saliency_map * 255).astype(np.uint8)
+        gradient_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
+        gradient_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
+        saliency_map = np.sqrt(gradient_x**2 + gradient_y**2)
+        saliency_map = (saliency_map * 255 / saliency_map.max()).astype(np.uint8)
         
         return saliency_map
     
