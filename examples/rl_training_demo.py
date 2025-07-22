@@ -33,7 +33,8 @@ def train_quick_demo():
         canvas_size=64,  # Smaller for faster training
         batch_size=64,
         device='cuda' if torch.cuda.is_available() else 'cpu',
-        log_dir='logs/quick_demo'
+        log_dir='logs/quick_demo',
+        dataset_name='cifar10'  # Use CIFAR-10 for real images
     )
     
     trainer.train(
@@ -60,7 +61,8 @@ def train_full_scale():
         canvas_size=128,
         batch_size=256,
         device='cuda' if torch.cuda.is_available() else 'cpu',
-        log_dir='logs/full_scale'
+        log_dir='logs/full_scale',
+        dataset_name='cifar10'  # Use CIFAR-10 for real images
     )
     
     trainer.train(
@@ -155,6 +157,8 @@ def visualize_training_progress():
         target_pil.save('sample_target.png')
         
         print("Saved sample_drawing.png and sample_target.png")
+        print("\nTo test photo-to-sketch with your own images:")
+        print("python examples/photo_to_sketch.py your_photo.jpg")
         
     else:
         print(f"No trained model found at {checkpoint_path}")

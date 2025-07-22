@@ -11,6 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 from .environment import DrawingEnvironment
 from .agent import PPOAgent, PPOConfig
 from .rendering import DifferentiableRenderer
+from .datasets import ImageDatasetManager
 
 class CurriculumLearning:
     """
@@ -23,15 +24,18 @@ class CurriculumLearning:
     4. Natural images
     """
     
-    def __init__(self, canvas_size: int = 128):
+    def __init__(self, canvas_size: int = 128, dataset_name: str = 'cifar10'):
         self.canvas_size = canvas_size
         self.current_level = 0
+        self.dataset_manager = ImageDatasetManager(canvas_size)
+        self.dataset_name = dataset_name
+        
         self.levels = [
-            {"name": "circles", "complexity": 0.1, "max_steps": 200},
-            {"name": "lines", "complexity": 0.3, "max_steps": 400},
-            {"name": "simple_shapes", "complexity": 0.5, "max_steps": 600},
-            {"name": "sketches", "complexity": 0.8, "max_steps": 800},
-            {"name": "natural_images", "complexity": 1.0, "max_steps": 1000}
+            {"name": "circles", "complexity": 0.1, "max_steps": 200, "dataset": None},
+            {"name": "lines", "complexity": 0.3, "max_steps": 400, "dataset": None},
+            {"name": "simple_shapes", "complexity": 0.5, "max_steps": 600, "dataset": "quickdraw"},
+            {"name": "sketches", "complexity": 0.8, "max_steps": 800, "dataset": "quickdraw"},
+            {"name": "natural_images", "complexity": 1.0, "max_steps": 1000, "dataset": dataset_name}
         ]
         
     def get_current_level(self) -> Dict:
@@ -56,20 +60,30 @@ class CurriculumLearning:
     def generate_target_batch(self, batch_size: int, device: str) -> torch.Tensor:
         """Generate batch of target images for current level."""
         level = self.get_current_level()
-        targets = torch.zeros((batch_size, 3, self.canvas_size, self.canvas_size), device=device)
         
+        # Use dataset if specified for this level
+        if level.get('dataset'):
+            try:
+                return self.dataset_manager.get_batch_for_curriculum(
+                    dataset_name=level['dataset'],
+                    batch_size=batch_size,
+                    level_complexity=level['complexity']
+                )
+            except Exception as e:
+                print(f"Failed to load dataset {level['dataset']}: {e}")
+                print("Falling back to synthetic data...")
+        
+        # Fallback to synthetic generation
         if level['name'] == 'circles':
-            targets = self._generate_circles(batch_size, device)
+            return self._generate_circles(batch_size, device)
         elif level['name'] == 'lines':
-            targets = self._generate_lines(batch_size, device)
+            return self._generate_lines(batch_size, device)
         elif level['name'] == 'simple_shapes':
-            targets = self._generate_simple_shapes(batch_size, device)
+            return self._generate_simple_shapes(batch_size, device)
         elif level['name'] == 'sketches':
-            targets = self._generate_sketches(batch_size, device)
+            return self._generate_sketches(batch_size, device)
         else:  # natural_images
-            targets = self._generate_natural_images(batch_size, device)
-            
-        return targets
+            return self._generate_natural_images(batch_size, device)
     
     def _generate_circles(self, batch_size: int, device: str) -> torch.Tensor:
         """Generate simple circle targets."""
@@ -139,9 +153,17 @@ class CurriculumLearning:
         return self._generate_lines(batch_size, device)
     
     def _generate_natural_images(self, batch_size: int, device: str) -> torch.Tensor:
-        """Generate natural image targets."""
-        # Placeholder - would use actual image datasets
-        return self._generate_circles(batch_size, device)
+        """Generate natural image targets using real datasets."""
+        try:
+            return self.dataset_manager.get_batch_for_curriculum(
+                dataset_name=self.dataset_name,
+                batch_size=batch_size,
+                level_complexity=1.0
+            )
+        except Exception as e:
+            print(f"Failed to load natural images: {e}")
+            print("Using fallback synthetic images...")
+            return self._generate_circles(batch_size, device)
 
 class RolloutBuffer:
     """Buffer for storing rollout data."""
@@ -208,7 +230,8 @@ class DrawingTrainer:
         canvas_size: int = 128,
         batch_size: int = 256,
         device: str = 'cuda',
-        log_dir: str = 'logs/drawing_rl'
+        log_dir: str = 'logs/drawing_rl',
+        dataset_name: str = 'cifar10'
     ):
         self.config = config or PPOConfig()
         self.device = device
@@ -217,7 +240,7 @@ class DrawingTrainer:
         # Initialize components
         self.env = DrawingEnvironment(batch_size, canvas_size, device=device)
         self.agent = PPOAgent(canvas_size, self.config, device)
-        self.curriculum = CurriculumLearning(canvas_size)
+        self.curriculum = CurriculumLearning(canvas_size, dataset_name)
         
         # Training tracking
         self.episode = 0
