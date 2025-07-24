@@ -25,13 +25,16 @@ class RewardCalculator:
         self.w_efficiency = 0.2
         self.w_structure = 0.1
         
-        # LPIPS model for perceptual similarity
-        try:
-            import lpips
-            self.lpips_model = lpips.LPIPS(net='alex').to(device)
-        except ImportError:
-            print("Warning: LPIPS not available, using MSE only for perceptual reward")
-            self.lpips_model = None
+        # LPIPS model for perceptual similarity - disabled for now to avoid memory issues
+        # TODO: Re-enable LPIPS with proper singleton pattern
+        self.lpips_model = None
+        if False:  # Temporarily disabled
+            try:
+                import lpips
+                self.lpips_model = lpips.LPIPS(net='alex').to(device)
+            except ImportError:
+                print("Warning: LPIPS not available, using MSE only for perceptual reward")
+                self.lpips_model = None
         
         # Edge detection kernels
         self.register_edge_kernels()

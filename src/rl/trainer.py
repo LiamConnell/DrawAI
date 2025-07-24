@@ -90,10 +90,11 @@ class CurriculumLearning:
         targets = torch.zeros((batch_size, 3, self.canvas_size, self.canvas_size), device=device)
         
         for i in range(batch_size):
-            # Random circle parameters
-            cx = torch.randint(20, self.canvas_size - 20, (1,)).item()
-            cy = torch.randint(20, self.canvas_size - 20, (1,)).item()
-            radius = torch.randint(10, 30, (1,)).item()
+            # Random circle parameters (adaptive to canvas size)
+            margin = min(self.canvas_size // 4, 20)
+            cx = torch.randint(margin, max(margin + 1, self.canvas_size - margin), (1,)).item()
+            cy = torch.randint(margin, max(margin + 1, self.canvas_size - margin), (1,)).item()
+            radius = torch.randint(max(1, self.canvas_size // 8), max(2, self.canvas_size // 4), (1,)).item()
             
             # Create circle mask
             y, x = torch.meshgrid(
@@ -316,13 +317,13 @@ class DrawingTrainer:
             # Take environment step
             next_state, reward, done, _ = self.env.step(action)
             
-            # Store rollout data
-            rollout_data['states'].append({k: v.clone() for k, v in state.items()})
-            rollout_data['actions'].append(action.clone())
-            rollout_data['rewards'].append(reward.clone())
-            rollout_data['log_probs'].append(log_prob.clone())
-            rollout_data['values'].append(value.clone())
-            rollout_data['dones'].append(done.clone())
+            # Store rollout data (detach to avoid gradient issues)
+            rollout_data['states'].append({k: v.detach().clone() for k, v in state.items()})
+            rollout_data['actions'].append(action.detach().clone())
+            rollout_data['rewards'].append(reward.detach().clone())
+            rollout_data['log_probs'].append(log_prob.detach().clone())
+            rollout_data['values'].append(value.detach().clone())
+            rollout_data['dones'].append(done.detach().clone())
             
             # Update episode tracking
             episode_rewards += reward

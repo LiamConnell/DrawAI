@@ -129,11 +129,11 @@ class DrawingEnvironment:
         mask = torch.zeros((3, self.canvas_size, self.canvas_size), device=self.device)
         
         # Linear interpolation between start and end
-        num_points = max(int(torch.norm(end - start).item()), 1)
+        num_points = max(int(torch.norm((end - start).float()).item()), 1)
         t_values = torch.linspace(0, 1, num_points, device=self.device)
         
         for t in t_values:
-            point = start + t * (end - start)
+            point = start.float() + t * (end - start).float()
             x, y = point.int()
             
             if 0 <= x < self.canvas_size and 0 <= y < self.canvas_size:

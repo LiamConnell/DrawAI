@@ -99,12 +99,12 @@ def test_environment():
         state, rewards, done, _ = env.step(actions)
         total_rewards += rewards
         
-        print(f"Step {step}: rewards = {rewards.cpu().numpy()}")
+        print(f"Step {step}: rewards = {rewards.detach().cpu().numpy()}")
         
         if torch.all(done):
             break
     
-    print(f"Final total rewards: {total_rewards.cpu().numpy()}")
+    print(f"Final total rewards: {total_rewards.detach().cpu().numpy()}")
 
 def visualize_training_progress():
     """Visualize training progress with sample drawings."""
